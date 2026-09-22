@@ -4,22 +4,17 @@
 
 ## 功能
 
-- 液态玻璃底部导航栏，支持折射、模糊、滑动与按压动画。
-- 胶囊形迷你播放器，与 Apple Music 播放操作配合工作。
-- 管理界面参考 [Shizuku Manager](https://github.com/RikkaApps/Shizuku) 布局。
-- 显示框架连接、模块作用域与 Hook 版本信息，可查看、复制、清空运行日志。
-- 支持简体中文、繁体中文、English、日本語及跟随系统语言。
-- 浅色、深色、跟随系统、纯黑、系统动态配色。
+Hook Apple Music 以实现液态玻璃底部导航栏，支持折射、模糊、滑动与按压动画，胶囊形迷你播放器，与 Apple Music 播放操作配合工作。
 
 ## 使用环境
 
-| 项目 | 要求 |
-| --- | --- |
-| Android | 11（API 30）及以上 |
-| 框架 | 支持现代 libxposed API 102 的 LSPosed 环境 |
-| 目标应用 | Apple Music（`com.apple.android.music`） |
-| 适配基线 | Apple Music 6.5.3（1599） |
-| 模块包名 | `moe.polariss.betteram` |
+| 项目     | 要求                                       |
+| -------- | ------------------------------------------ |
+| Android  | 11（API 30）及以上                         |
+| 框架     | 支持现代 libxposed API 102 的 LSPosed 环境 |
+| 目标应用 | Apple Music（`com.apple.android.music`）   |
+| 适配基线 | Apple Music 6.5.3（1599）                  |
+| 模块包名 | `moe.polariss.betteram`                    |
 
 Hook 依赖 Apple Music 内部视图结构，升级目标应用后可能需要同步调整。系统动态配色需 Android 12 及以上。
 
@@ -60,14 +55,14 @@ adb install app/build/outputs/apk/release/app-release.apk
 
 源码目录 `app/src/main/java/moe/polariss/betteram/`。
 
-| 路径 | 内容 |
-| --- | --- |
-| `hook/` | libxposed 入口、宿主视图扫描与布局适配 |
-| `ui/` | Backdrop 渲染、管理界面（`LiquidNavigationGlass.kt`、`ModuleScreen.kt` 等） |
-| `ui/official/` | AndroidLiquidGlass catalog 组件适配版本 |
-| `settings/`、`status/`、`log/` | 偏好存储、框架连接、跨进程日志 |
-| `app/src/main/res/` | 界面资源与翻译 |
-| `third_party/` | 第三方许可与来源说明 |
+| 路径                           | 内容                                                                        |
+| ------------------------------ | --------------------------------------------------------------------------- |
+| `hook/`                        | libxposed 入口、宿主视图扫描与布局适配                                      |
+| `ui/`                          | Backdrop 渲染、管理界面（`LiquidNavigationGlass.kt`、`ModuleScreen.kt` 等） |
+| `ui/official/`                 | AndroidLiquidGlass catalog 组件适配版本                                     |
+| `settings/`、`status/`、`log/` | 偏好存储、框架连接、跨进程日志                                              |
+| `app/src/main/res/`            | 界面资源与翻译                                                              |
+| `third_party/`                 | 第三方许可与来源说明                                                        |
 
 ## 许可与致谢
 
