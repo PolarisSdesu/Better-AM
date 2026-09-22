@@ -1,0 +1,35 @@
+# Gradle
+.gradle/
+**/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+local.properties
+
+# Kotlin
+.kotlin/
+
+# macOS
+.DS_Store
+
+# Signing keys and credentials
+*.jks
+*.keystore
+*.p12
+*.key
+keystore.properties
+
+# Logs
+*.log
+
+# Local analysis artifacts and private host inputs
+.artifacts/
+artifacts/
+
+# Apple Music APK sets and decompiled proprietary source
+*.apk
+*.apks
+*.xapk
+*.aab
+jadx/

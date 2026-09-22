@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <queries>
+        <package android:name="com.apple.android.music" />
+    </queries>
+    <!--
+      enableOnBackInvokedCallback is read on API 33+ only; older releases ignore
+      it, which is the intended behavior. dataExtractionRules restates the
+      allowBackup=false intent for Android 12+ device transfers.
+    -->
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:description="@string/app_description"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.BetterAM"
+        tools:ignore="UnusedAttribute">
+        <!--
+          Exported on purpose: the hook runs inside the Apple Music process and
+          reports logs/hook state through this provider, so it cannot be
+          UID-scoped. Only log text and the hooked-version report are exposed.
+        -->
+        <provider
+            android:name=".log.LogProvider"
+            android:authorities="moe.polariss.betteram.logs"
+            android:exported="true"
+            tools:ignore="ExportedContentProvider" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

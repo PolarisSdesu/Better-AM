@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Pre-Android 12 counterpart to data_extraction_rules.xml. android:allowBackup
+  is false, so this only makes the "back up nothing" policy explicit for the
+  API levels that read fullBackupContent.
+-->
+<full-backup-content>
+    <exclude domain="root" />
+    <exclude domain="file" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="external" />
+</full-backup-content>
