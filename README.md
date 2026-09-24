@@ -43,6 +43,8 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
 
 输出：`app/build/outputs/apk/release/app-release.apk`。release 启用 R8 与资源压缩，使用本机 debug key 签名；正式分发请自备固定签名密钥，仓库不含任何密钥。
 
+Release 不直接提供按 ABI 拆分的 APK；如需 arm64-v8a / armeabi-v7a 等分 ABI 版本，可自行克隆本仓库构建（`./build-abi.sh` 同时产出 arm64-v8a、armeabi-v7a 与 universal 三份 APK）。
+
 安装到已连接设备：
 
 ```sh
