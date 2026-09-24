@@ -99,8 +99,9 @@ All paths are relative to `app/src/main/java/moe/polariss/betteram/`.
   activities that do not provide AndroidX owners.
 - `ui/official/`: adapted AndroidLiquidGlass catalog components (lens, spring,
   drag, and tab rendering).
-- `MainActivity.kt`: standalone manager; uses `ComponentActivity` and its owners.
-- `ui/ModuleScreen.kt`: home, logs, system bar styling and Navigation 3 routes.
+- `MainActivity.kt`: manager home; uses `ComponentActivity` and its owners.
+- `ManagerPageActivity.kt`: separate settings and logs windows for platform back.
+- `ui/ModuleScreen.kt`: home, settings, logs and system bar styling.
 - `ui/SettingsPage.kt`, `settings/AppSettings.kt`: manager preferences and storage.
 - `status/ModuleStatus.kt`: process-local framework service connection and scope
   checks.
@@ -119,16 +120,13 @@ body titles, and compact app bars. Settings use grouped preference rows.
 - Language and appearance preferences must update immediately and persist.
 - Theme changes must update status bar and navigation bar icon contrast.
 - Preserve transparent system navigation and bottom safe insets.
-- Manager navigation runs on Navigation 3 (`NavDisplay` + `rememberNavBackStack`).
-  Destinations are the `@Serializable` `HomeRoute` / `SettingsRoute` / `LogsRoute`
-  keys in `ModuleScreen.kt`, so the back stack survives rotation and process
-  death; keep them serializable and keep the serialization Gradle plugin applied.
-  Navigation 3 owns the system back gesture, and navigation uses the
-  Navigation 3 defaults (the 700ms fade, and the predictive pop transition that
-  slides the outgoing page out in the drag direction while the page underneath
-  stays pinned, both matching Shizuku's platform-owned motion). At the root
-  destination back is not intercepted, so it still closes the manager via
-  system predictive back (`enableOnBackInvokedCallback`).
+- Manager navigation follows Shizuku Manager's multi-activity model (reference
+  `RikkaApps/Shizuku` `b844bc4`). Home, settings and logs are separate Activity
+  windows. Open pages with `startActivity`, return with `finish`, and keep
+  `enableOnBackInvokedCallback` enabled so Android owns every predictive back
+  gesture, including the cross-activity scale, slide and corner clipping. Do
+  not intercept the system back gesture or replace its animation with a Compose
+  transition.
 - The native `MaterialToolbar` and its overflow popup are re-themed at runtime
   in `ModuleScreen.kt` (`toolbarThemeContext`) so the scheme the Compose pages
   resolved reaches the view toolkit: `Theme.BetterAM.Toolbar.DynamicColors.*`

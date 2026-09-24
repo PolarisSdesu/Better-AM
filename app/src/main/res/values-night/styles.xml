@@ -1,7 +1,6 @@
 <resources>
-    <!-- Night counterpart of Theme.BetterAM.Main so the window behind the
-         Compose pages (exposed while predictive back transforms a destination
-         or finishes the manager) is dark in night mode like Shizuku's. -->
+    <!-- Night counterpart of Theme.BetterAM.Main for the system-owned
+         activity transitions and predictive back animation. -->
     <style name="Theme.BetterAM.Main" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:colorAccent">#FFFFB2BB</item>

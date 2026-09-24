@@ -1,7 +1,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.compose") version "1.12.0"
 }
 
@@ -65,8 +64,6 @@ android {
 dependencies {
     compileOnly("io.github.libxposed:api:102.0.0")
     implementation("io.github.libxposed:service:102.0.0")
-    implementation("androidx.navigation3:navigation3-runtime:1.1.7")
-    implementation("androidx.navigation3:navigation3-ui:1.1.7")
     implementation("androidx.compose.material3:material3:1.5.0-alpha28")
     // Keep the manager app bar behavior identical to Shizuku's MaterialToolbar,
     // including native action-menu overflow and long-press tooltips.

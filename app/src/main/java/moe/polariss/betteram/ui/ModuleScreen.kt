@@ -95,11 +95,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
-import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.NavDisplay
-import kotlinx.serialization.Serializable
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
@@ -124,6 +119,9 @@ fun ModuleScreen(
     onOpenMusic: () -> Unit,
     onCopyLogs: () -> Unit,
     onClearLogs: () -> Unit,
+    page: ManagerPage = ManagerPage.HOME,
+    onOpenSettings: () -> Unit = {},
+    onOpenLogs: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -148,25 +146,18 @@ fun ModuleScreen(
             onCopyLogs,
             onClearLogs,
             (context as Activity),
+            page, onOpenSettings, onOpenLogs,
         )
     }
 }
 
-// Navigation 3 destinations. The keys are serializable so the back stack can be
-// restored across configuration changes and process death.
-@Serializable
-internal data object HomeRoute : NavKey
-
-@Serializable
-internal data object SettingsRoute : NavKey
-
-@Serializable
-internal data object LogsRoute : NavKey
+enum class ManagerPage { HOME, SETTINGS, LOGS }
 
 @Composable
 private fun ModuleContent(version: String, musicVersion: String, hookedVersion: String?, logs: String, status: ModuleStatus,
     settings: AppSettings, onSettingsChange: (AppSettings) -> Unit,
-    onOpenMusic: () -> Unit, onCopyLogs: () -> Unit, onClearLogs: () -> Unit, activity: Activity) {
+    onOpenMusic: () -> Unit, onCopyLogs: () -> Unit, onClearLogs: () -> Unit, activity: Activity,
+    page: ManagerPage, onOpenSettings: () -> Unit, onOpenLogs: () -> Unit) {
     val dark = when (settings.appearance) {
         "light" -> false
         "dark" -> true
@@ -191,70 +182,42 @@ private fun ModuleContent(version: String, musicVersion: String, hookedVersion: 
             isAppearanceLightNavigationBars = colors.background.luminance() > 0.5f
         }
     }
-    val backStack = rememberNavBackStack(HomeRoute)
     var showAbout by rememberSaveable { mutableStateOf(false) }
     val logScroll = rememberLazyListState()
-    // Navigation 3 owns the system back gesture; at the root destination it is
-    // disabled, so back falls through and closes the manager via the platform,
-    // which turns it into system predictive back (enableOnBackInvokedCallback
-    // in the manifest).
-    val navigateBack = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) }
     MaterialExpressiveTheme(colorScheme = colors) {
-        // Keep the transparent system bars backed by the current theme, including
-        // the area exposed while predictive back transforms a destination.
         Box(Modifier.fillMaxSize().background(colors.background)) {
-            NavDisplay(
-                backStack = backStack,
-                modifier = Modifier.fillMaxSize(),
-                onBack = navigateBack,
-                // Match Shizuku's platform-owned motion: forward/pop use the
-                // Navigator 3 default fade (the system activity transition
-                // Shizuku inherits), and the predictive pop uses Navigation 3's
-                // default fade + scale-out seeked by the back gesture, mirroring
-                // the platform predictive-back transform.
-                entryProvider = entryProvider {
-                    entry<HomeRoute> {
-                        HomeScreen(
-                            version = version,
-                            musicVersion = musicVersion,
-                            hookedVersion = hookedVersion,
-                            status = status,
-                            dark = dark,
-                            systemColors = settings.systemColors,
-                            blackBackground = settings.blackBackground && dark,
-                            dynamicColorsSupported = dynamicColorSupported,
-                            onOpenSettings = { backStack.add(SettingsRoute) },
-                            onOpenLogs = { backStack.add(LogsRoute) },
-                            onShowAbout = { showAbout = true },
-                            onOpenMusic = onOpenMusic,
-                        )
-                    }
-                    entry<SettingsRoute> {
-                        SubPage(
-                            title = stringResource(R.string.settings),
-                            dark = dark,
-                            systemColors = settings.systemColors,
-                            blackBackground = settings.blackBackground && dark,
-                            dynamicColorsSupported = dynamicColorSupported,
-                            onBack = navigateBack,
-                        ) {
-                            SettingsPage(settings, onSettingsChange)
-                        }
-                    }
-                    entry<LogsRoute> {
-                        SubPage(
-                            title = stringResource(R.string.logs_title),
-                            dark = dark,
-                            systemColors = settings.systemColors,
-                            blackBackground = settings.blackBackground && dark,
-                            dynamicColorsSupported = dynamicColorSupported,
-                            onBack = navigateBack,
-                        ) {
-                            LogPage(logs, logScroll, onCopyLogs, onClearLogs)
-                        }
-                    }
-                },
-            )
+            when (page) {
+                ManagerPage.HOME -> HomeScreen(
+                    version = version,
+                    musicVersion = musicVersion,
+                    hookedVersion = hookedVersion,
+                    status = status,
+                    dark = dark,
+                    systemColors = settings.systemColors,
+                    blackBackground = settings.blackBackground && dark,
+                    dynamicColorsSupported = dynamicColorSupported,
+                    onOpenSettings = onOpenSettings,
+                    onOpenLogs = onOpenLogs,
+                    onShowAbout = { showAbout = true },
+                    onOpenMusic = onOpenMusic,
+                )
+                ManagerPage.SETTINGS -> SubPage(
+                    title = stringResource(R.string.settings),
+                    dark = dark,
+                    systemColors = settings.systemColors,
+                    blackBackground = settings.blackBackground && dark,
+                    dynamicColorsSupported = dynamicColorSupported,
+                    onBack = activity::finish,
+                ) { SettingsPage(settings, onSettingsChange) }
+                ManagerPage.LOGS -> SubPage(
+                    title = stringResource(R.string.logs_title),
+                    dark = dark,
+                    systemColors = settings.systemColors,
+                    blackBackground = settings.blackBackground && dark,
+                    dynamicColorsSupported = dynamicColorSupported,
+                    onBack = activity::finish,
+                ) { LogPage(logs, logScroll, onCopyLogs, onClearLogs) }
+            }
             if (showAbout) {
                 AlertDialog(onDismissRequest = { showAbout = false }, title = { Text("Better AM") },
                     text = { Text(stringResource(R.string.about_description, version)) },

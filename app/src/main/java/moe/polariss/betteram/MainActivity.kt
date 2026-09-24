@@ -1,13 +1,13 @@
 package moe.polariss.betteram
 
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -21,6 +21,7 @@ import androidx.core.view.WindowCompat
 import moe.polariss.betteram.log.LogBridge
 import moe.polariss.betteram.log.HookReportStore
 import moe.polariss.betteram.ui.ModuleScreen
+import moe.polariss.betteram.ui.ManagerPage
 import moe.polariss.betteram.status.ModuleStatus
 import moe.polariss.betteram.status.ModuleStatusReader
 import kotlinx.coroutines.*
@@ -50,18 +51,15 @@ class MainActivity : ComponentActivity() {
             // state is still resolving on a fresh process.
             SystemClock.elapsedRealtime() < initialLoadingUntil
         }
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         settings = AppSettings.load(this)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         val dark = (resources.configuration.uiMode and
             Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = !dark
             isAppearanceLightNavigationBars = !dark
         }
-        window.statusBarColor = Color.TRANSPARENT
-        window.navigationBarColor = Color.TRANSPARENT
-        window.navigationBarDividerColor = Color.TRANSPARENT
         window.isNavigationBarContrastEnforced = false
         val version = packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
         LogBridge.append(this, "Better AM UI opened; version=$version, api=${Build.VERSION.SDK_INT}")
@@ -76,6 +74,8 @@ class MainActivity : ComponentActivity() {
                     hookedVersion = hookedVersion,
                     logs = logs,
                     status = moduleStatus,
+                    onOpenSettings = { startActivity(Intent(this@MainActivity, ManagerPageActivity::class.java).putExtra(ManagerPageActivity.EXTRA_PAGE, ManagerPage.SETTINGS.name)) },
+                    onOpenLogs = { startActivity(Intent(this@MainActivity, ManagerPageActivity::class.java).putExtra(ManagerPageActivity.EXTRA_PAGE, ManagerPage.LOGS.name)) },
                     onOpenMusic = {
                         runCatching {
                             startActivity(
@@ -110,6 +110,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        settings = AppSettings.load(this)
         // Grants can disappear after reboot/reinstallation. Re-establish access
         // before the user returns to Apple Music and its next resume reports in.
         LogBridge.grantTargetAccess(this)
