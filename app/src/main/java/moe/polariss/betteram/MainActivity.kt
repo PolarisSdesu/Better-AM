@@ -110,6 +110,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Grants can disappear after reboot/reinstallation. Re-establish access
+        // before the user returns to Apple Music and its next resume reports in.
+        LogBridge.grantTargetAccess(this)
         refreshJob?.cancel()
         refreshJob = uiScope.launch {
             if (lastModuleStatus.state == ModuleStatus.State.CHECKING) {

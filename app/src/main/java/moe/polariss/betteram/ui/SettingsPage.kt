@@ -1,13 +1,13 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package moe.polariss.betteram.ui
 
 import android.os.Build
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -75,11 +75,20 @@ private fun ChoicePreference(title: String, value: String, choices: List<Pair<St
     var expanded by remember { mutableStateOf(value = false) }
     Box {
         PreferenceRow(title, choices.firstOrNull { it.first == value }?.second.orEmpty(), { expanded = true })
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            choices.forEach { (key, label) ->
-                DropdownMenuItem(text = { Text(label) },
-                    leadingIcon = { RadioButton(selected = value == key, onClick = null) },
-                    onClick = { expanded = false; onSelect(key) })
+        DropdownMenuPopup(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuGroup(
+                shapes = MenuDefaults.groupShapes(),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
+                choices.forEachIndexed { index, (key, label) ->
+                    SelectableDropdownMenuItem(
+                        selected = value == key,
+                        text = { Text(label) },
+                        shapes = MenuDefaults.itemShape(index, choices.size),
+                        leadingIcon = { RadioButton(selected = value == key, onClick = null) },
+                        onClick = { expanded = false; onSelect(key) },
+                    )
+                }
             }
         }
     }
@@ -87,29 +96,24 @@ private fun ChoicePreference(title: String, value: String, choices: List<Pair<St
 
 @Composable
 private fun SwitchPreference(title: String, summary: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
-    PreferenceRow(title, summary, { onChange(!checked) }) {
-        Switch(checked = checked, onCheckedChange = onChange)
+    ListItem(
+        checked = checked,
+        onCheckedChange = onChange,
+        modifier = Modifier.fillMaxWidth(),
+        supportingContent = summary?.let { { Text(it) } },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+    ) {
+        Text(title)
     }
 }
 
 @Composable
-private fun PreferenceRow(title: String, summary: String?, onClick: () -> Unit, trailing: @Composable (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 72.dp)
-        .padding(horizontal = 16.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            if (summary != null) {
-                Text(
-                    summary,
-                    Modifier.padding(top = 4.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (trailing != null) {
-            Spacer(Modifier.width(16.dp))
-            trailing()
-        }
+private fun PreferenceRow(title: String, summary: String?, onClick: () -> Unit) {
+    ListItem(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        supportingContent = summary?.let { { Text(it) } },
+    ) {
+        Text(title)
     }
 }

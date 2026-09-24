@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mirrors Shizuku manager/src/main/res/menu/main.xml. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_settings"
+        android:icon="@drawable/ic_symbol_settings"
+        android:title="@string/settings"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_logs"
+        android:title="@string/logs_title"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_about"
+        android:title="@string/about"
+        app:showAsAction="never" />
+
+</menu>

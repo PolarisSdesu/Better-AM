@@ -30,7 +30,11 @@
             android:name=".log.LogProvider"
             android:authorities="moe.polariss.betteram.logs"
             android:exported="true"
-            tools:ignore="ExportedContentProvider" />
+            tools:ignore="ExportedContentProvider">
+            <!-- A targeted URI grant makes this provider visible to Apple Music
+                 on Android 11+, without changing the host's manifest. -->
+            <grant-uri-permission android:path="/hook" />
+        </provider>
         <activity
             android:name=".MainActivity"
             android:exported="true">

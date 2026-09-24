@@ -1,18 +1,21 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 
 package moe.polariss.betteram.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.os.Build
+import android.view.ContextThemeWrapper
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +24,11 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,46 +46,32 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TooltipAnchorPosition
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.material3.rememberTooltipState
+import androidx.compose.material3.expressiveLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -85,25 +79,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.painterResource
+import androidx.annotation.DrawableRes
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import androidx.navigationevent.NavigationEvent
 import kotlinx.serialization.Serializable
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.DynamicColorsOptions
 import moe.polariss.betteram.R
 import moe.polariss.betteram.settings.AppSettings
 import moe.polariss.betteram.status.ModuleStatus
@@ -111,9 +110,8 @@ import moe.polariss.betteram.status.ModuleStatus
 // Layout reference: RikkaApps/Shizuku b844bc491f1790c72328e1a8e5b2349f8978f0ea
 // manager home_*.xml, HomeActivity.kt and values/styles.xml.
 // Keep the Manager's 28dp cards, 40dp icon discs, 16/20dp padding and 16sp titles.
-// The top app bar actions mirror the MaterialToolbar: icon buttons reveal their
-// label as a tooltip (long press / hover) and the overflow (MoreVert) opens the
-// scrollable DropdownMenu with the remaining destinations.
+// The manager app bar is an actual MaterialToolbar, matching Shizuku's native
+// action-menu layout, overflow popup and platform long-press tooltips.
 @Composable
 fun ModuleScreen(
     version: String,
@@ -133,6 +131,10 @@ fun ModuleScreen(
     CompositionLocalProvider(
         LocalContext provides localizedContext,
         LocalConfiguration provides localizedContext.resources.configuration,
+        // stringResource/pluralStringResource read LocalResources directly.
+        // Provide it explicitly so retained navigation entries and popups also
+        // observe the selected language instead of inheriting host resources.
+        LocalResources provides localizedContext.resources,
     ) {
         ModuleContent(
             version,
@@ -177,7 +179,7 @@ private fun ModuleContent(version: String, musicVersion: String, hookedVersion: 
         (settings.systemColors && dynamicColorSupported && dark) -> dynamicDarkColorScheme(context)
         (settings.systemColors && dynamicColorSupported) -> dynamicLightColorScheme(context)
         dark -> darkColorScheme()
-        else -> lightColorScheme()
+        else -> expressiveLightColorScheme()
     }
     val colors = if (dark && settings.blackBackground) baseColors.copy(
         background = Color.Black, surface = Color.Black, surfaceContainer = Color.Black,
@@ -185,37 +187,31 @@ private fun ModuleContent(version: String, musicVersion: String, hookedVersion: 
     ) else baseColors
     SideEffect {
         WindowCompat.getInsetsController(activity.window, activity.window.decorView).apply {
-            isAppearanceLightStatusBars = !dark
-            isAppearanceLightNavigationBars = !dark
+            isAppearanceLightStatusBars = colors.surface.luminance() > 0.5f
+            isAppearanceLightNavigationBars = colors.background.luminance() > 0.5f
         }
     }
     val backStack = rememberNavBackStack(HomeRoute)
     var showAbout by rememberSaveable { mutableStateOf(false) }
     val logScroll = rememberLazyListState()
     // Navigation 3 owns the system back gesture; at the root destination it is
-    // disabled, so back falls through and closes the manager.
+    // disabled, so back falls through and closes the manager via the platform,
+    // which turns it into system predictive back (enableOnBackInvokedCallback
+    // in the manifest).
     val navigateBack = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) }
-    MaterialTheme(colorScheme = colors) {
-        Box(Modifier.fillMaxSize()) {
+    MaterialExpressiveTheme(colorScheme = colors) {
+        // Keep the transparent system bars backed by the current theme, including
+        // the area exposed while predictive back transforms a destination.
+        Box(Modifier.fillMaxSize().background(colors.background)) {
             NavDisplay(
                 backStack = backStack,
                 modifier = Modifier.fillMaxSize(),
                 onBack = navigateBack,
-                // Navigation 3's defaults animate entry, exit and predictive back.
-                // The manager keeps the plain page swap for regular navigation;
-                // only the predictive back gesture animates, sliding the page out
-                // in the drag direction while the page underneath stays pinned.
-                transitionSpec = { EnterTransition.None togetherWith ExitTransition.None },
-                popTransitionSpec = { EnterTransition.None togetherWith ExitTransition.None },
-                predictivePopTransitionSpec = { swipeEdge ->
-                    val slideOut = when (swipeEdge) {
-                        NavigationEvent.EDGE_LEFT -> { width: Int -> width }
-                        NavigationEvent.EDGE_RIGHT -> { width: Int -> -width }
-                        else -> { _: Int -> 0 }
-                    }
-                    EnterTransition.None togetherWith
-                        slideOutHorizontally(animationSpec = tween(700), targetOffsetX = slideOut)
-                },
+                // Match Shizuku's platform-owned motion: forward/pop use the
+                // Navigator 3 default fade (the system activity transition
+                // Shizuku inherits), and the predictive pop uses Navigation 3's
+                // default fade + scale-out seeked by the back gesture, mirroring
+                // the platform predictive-back transform.
                 entryProvider = entryProvider {
                     entry<HomeRoute> {
                         HomeScreen(
@@ -223,6 +219,10 @@ private fun ModuleContent(version: String, musicVersion: String, hookedVersion: 
                             musicVersion = musicVersion,
                             hookedVersion = hookedVersion,
                             status = status,
+                            dark = dark,
+                            systemColors = settings.systemColors,
+                            blackBackground = settings.blackBackground && dark,
+                            dynamicColorsSupported = dynamicColorSupported,
                             onOpenSettings = { backStack.add(SettingsRoute) },
                             onOpenLogs = { backStack.add(LogsRoute) },
                             onShowAbout = { showAbout = true },
@@ -230,12 +230,26 @@ private fun ModuleContent(version: String, musicVersion: String, hookedVersion: 
                         )
                     }
                     entry<SettingsRoute> {
-                        SubPage(title = stringResource(R.string.settings), onBack = navigateBack) {
+                        SubPage(
+                            title = stringResource(R.string.settings),
+                            dark = dark,
+                            systemColors = settings.systemColors,
+                            blackBackground = settings.blackBackground && dark,
+                            dynamicColorsSupported = dynamicColorSupported,
+                            onBack = navigateBack,
+                        ) {
                             SettingsPage(settings, onSettingsChange)
                         }
                     }
                     entry<LogsRoute> {
-                        SubPage(title = stringResource(R.string.logs_title), onBack = navigateBack) {
+                        SubPage(
+                            title = stringResource(R.string.logs_title),
+                            dark = dark,
+                            systemColors = settings.systemColors,
+                            blackBackground = settings.blackBackground && dark,
+                            dynamicColorsSupported = dynamicColorSupported,
+                            onBack = navigateBack,
+                        ) {
                             LogPage(logs, logScroll, onCopyLogs, onClearLogs)
                         }
                     }
@@ -244,7 +258,7 @@ private fun ModuleContent(version: String, musicVersion: String, hookedVersion: 
             if (showAbout) {
                 AlertDialog(onDismissRequest = { showAbout = false }, title = { Text("Better AM") },
                     text = { Text(stringResource(R.string.about_description, version)) },
-                    confirmButton = { TextButton(onClick = { showAbout = false }) { Text(stringResource(R.string.ok)) } })
+                    confirmButton = { TextButton(shapes = ButtonDefaults.shapes(), onClick = { showAbout = false }) { Text(stringResource(R.string.ok)) } })
             }
         }
     }
@@ -256,41 +270,27 @@ private fun HomeScreen(
     musicVersion: String,
     hookedVersion: String?,
     status: ModuleStatus,
+    dark: Boolean,
+    systemColors: Boolean,
+    blackBackground: Boolean,
+    dynamicColorsSupported: Boolean,
     onOpenSettings: () -> Unit,
     onOpenLogs: () -> Unit,
     onShowAbout: () -> Unit,
     onOpenMusic: () -> Unit,
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
-            TopAppBar(
-                title = { Text("Better AM", fontSize = 20.sp) },
-                expandedHeight = 56.dp,
-                actions = {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below),
-                        tooltip = { PlainTooltip { Text(stringResource(R.string.settings)) } },
-                        state = rememberTooltipState(),
-                    ) {
-                        IconButton(onClick = onOpenSettings) {
-                            Icon(Icons.Default.Settings, stringResource(R.string.settings))
-                        }
-                    }
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below),
-                        tooltip = { PlainTooltip { Text(stringResource(R.string.more_options)) } },
-                        state = rememberTooltipState(),
-                    ) {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Default.MoreVert, stringResource(R.string.more_options))
-                        }
-                    }
-                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.logs_title)) }, onClick = { menuExpanded = false; onOpenLogs() })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.about)) }, onClick = { menuExpanded = false; onShowAbout() })
-                    }
-                }
+            ManagerToolbar(
+                title = "Better AM",
+                dark = dark,
+                systemColors = systemColors,
+                blackBackground = blackBackground,
+                dynamicColorsSupported = dynamicColorsSupported,
+                onOpenSettings = onOpenSettings,
+                onOpenLogs = onOpenLogs,
+                onShowAbout = onShowAbout,
             )
         }
     ) { padding ->
@@ -314,7 +314,7 @@ private fun HomeScreen(
                         ModuleStatus.State.ERROR -> stringResource(R.string.status_error)
                     }
                     ManagerRow(
-                        if (current.state == ModuleStatus.State.ENABLED) Icons.Default.CheckCircle else Icons.Default.Info,
+                        if (current.state == ModuleStatus.State.ENABLED) R.drawable.ic_symbol_check_circle else R.drawable.ic_symbol_info,
                         title, when (current.state) {
                             ModuleStatus.State.CHECKING -> stringResource(R.string.detail_checking)
                             ModuleStatus.State.ENABLED -> stringResource(R.string.detail_enabled, current.frameworkName)
@@ -326,10 +326,10 @@ private fun HomeScreen(
                 }
             }
             ManagerCard(onClick = onOpenLogs) {
-                ManagerRow(Icons.AutoMirrored.Filled.List, stringResource(R.string.logs_title), stringResource(R.string.logs_summary))
+                ManagerRow(R.drawable.ic_symbol_list, stringResource(R.string.logs_title), stringResource(R.string.logs_summary))
             }
             ManagerCard {
-                ManagerRow(Icons.Default.Settings, stringResource(R.string.enable_title))
+                ManagerRow(R.drawable.ic_symbol_settings, stringResource(R.string.enable_title))
                 Text(stringResource(R.string.enable_description),
                     Modifier.padding(vertical = 24.dp), style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -338,26 +338,16 @@ private fun HomeScreen(
                 Spacer(Modifier.height(24.dp))
                 Button(
                     onClick = onOpenMusic,
-                    contentPadding = PaddingValues(start = 12.dp, top = 8.dp, end = 16.dp, bottom = 8.dp)
+                    shapes = ButtonDefaults.shapes(),
                 ) {
-                    Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        stringResource(R.string.open_music),
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            lineHeight = 18.sp,
-                            platformStyle = PlatformTextStyle(includeFontPadding = false),
-                            lineHeightStyle = LineHeightStyle(
-                                alignment = LineHeightStyle.Alignment.Center,
-                                trim = LineHeightStyle.Trim.Both
-                            )
-                        )
-                    )
+                    Icon(painterResource(R.drawable.ic_symbol_play_arrow), null,
+                        Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                    Text(stringResource(R.string.open_music))
                 }
             }
             ManagerCard {
-                ManagerRow(Icons.Default.Build, stringResource(R.string.hook_info))
+                ManagerRow(R.drawable.ic_symbol_build, stringResource(R.string.hook_info))
                 val hookInfo = when {
                     hookedVersion != null -> stringResource(R.string.hooked_version, hookedVersion)
                     musicVersion == "未安装" -> stringResource(R.string.music_not_installed)
@@ -368,7 +358,7 @@ private fun HomeScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             ManagerCard(onClick = onShowAbout) {
-                ManagerRow(Icons.Default.Info, stringResource(R.string.about_app), stringResource(R.string.version_label, version))
+                ManagerRow(R.drawable.ic_symbol_info, stringResource(R.string.about_app), stringResource(R.string.version_label, version))
             }
             Spacer(Modifier.height(8.dp))
         }
@@ -376,19 +366,181 @@ private fun HomeScreen(
 }
 
 @Composable
-private fun SubPage(title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
-    Scaffold(topBar = {
-        TopAppBar(title = { Text(title, fontSize = 20.sp) },
-            expandedHeight = 56.dp, navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
-                }
-            })
+private fun SubPage(
+    title: String,
+    dark: Boolean,
+    systemColors: Boolean,
+    blackBackground: Boolean,
+    dynamicColorsSupported: Boolean,
+    onBack: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing, topBar = {
+        ManagerToolbar(
+            title = title,
+            dark = dark,
+            systemColors = systemColors,
+            blackBackground = blackBackground,
+            dynamicColorsSupported = dynamicColorsSupported,
+            onBack = onBack,
+        )
     }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding), contentAlignment = Alignment.TopCenter) {
             content()
         }
     }
+}
+
+/**
+ * Shizuku uses a MaterialToolbar plus an XML Menu rather than Compose icon
+ * buttons. Keeping the same native widgets is important here: ActionMenuView
+ * owns the 48dp targets, overflow placement, pressed state, haptics, and the
+ * platform tooltip shown after Android's standard long-press timeout.
+ */
+@Composable
+private fun ManagerToolbar(
+    title: String,
+    dark: Boolean,
+    systemColors: Boolean,
+    blackBackground: Boolean,
+    dynamicColorsSupported: Boolean,
+    onBack: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
+    onOpenLogs: (() -> Unit)? = null,
+    onShowAbout: (() -> Unit)? = null,
+) {
+    val context = LocalContext.current
+    val surfaceColor = MaterialTheme.colorScheme.surface.toArgb()
+    val contentColor = MaterialTheme.colorScheme.onSurface.toArgb()
+    val backDescription = stringResource(R.string.back)
+    val settingsTitle = stringResource(R.string.settings)
+    val logsTitle = stringResource(R.string.logs_title)
+    val aboutTitle = stringResource(R.string.about)
+    val moreOptions = stringResource(R.string.more_options)
+
+    key(context, dark, systemColors, blackBackground, dynamicColorsSupported, onBack != null) {
+        AndroidView(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+                )
+                // Shizuku's Material 3 actionBarSize resolves to the compact
+                // top-app-bar token (64dp), rather than Compose's old 56dp bar.
+                .height(64.dp),
+            factory = { baseContext ->
+                // Rebuild with the theme matching the resolved scheme so the
+                // native popup menu backgrounds, text and inks use the same
+                // colors as the Compose pages (including system/dynamic colors
+                // and the black appearance).
+                val themedContext = toolbarThemeContext(
+                    baseContext, dark, systemColors, blackBackground, dynamicColorsSupported,
+                )
+                MaterialToolbar(themedContext).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                    elevation = 0f
+                    if (onBack == null) {
+                        inflateMenu(R.menu.main)
+                        overflowIcon = AppCompatResources.getDrawable(themedContext, R.drawable.ic_symbol_more_vert)
+                    } else {
+                        navigationIcon = AppCompatResources.getDrawable(themedContext, R.drawable.ic_symbol_arrow_back)
+                    }
+                }
+            },
+            update = { toolbar ->
+                toolbar.title = title
+                toolbar.setBackgroundColor(surfaceColor)
+                toolbar.setTitleTextColor(contentColor)
+                toolbar.navigationIcon?.setTint(contentColor)
+                toolbar.navigationContentDescription = backDescription
+                toolbar.setNavigationOnClickListener { onBack?.invoke() }
+
+                toolbar.menu.findItem(R.id.action_settings)?.apply {
+                    this.title = settingsTitle
+                    icon?.setTint(contentColor)
+                }
+                toolbar.menu.findItem(R.id.action_logs)?.title = logsTitle
+                toolbar.menu.findItem(R.id.action_about)?.title = aboutTitle
+                toolbar.overflowIcon?.setTint(contentColor)
+                toolbar.setOnMenuItemClickListener { item ->
+                    when (item.itemId) {
+                        R.id.action_settings -> onOpenSettings?.invoke()
+                        R.id.action_logs -> onOpenLogs?.invoke()
+                        R.id.action_about -> onShowAbout?.invoke()
+                        else -> return@setOnMenuItemClickListener false
+                    }
+                    true
+                }
+
+                // AppCompat supplies this automatically from its own locale.
+                // Replace it with the manager-localized string so changing the
+                // in-app language updates accessibility and long-press text now.
+                if (onBack == null) {
+                    toolbar.post { toolbar.setOverflowDescription(moreOptions) }
+                }
+            },
+        )
+    }
+}
+
+private fun MaterialToolbar.setOverflowDescription(description: String) {
+    fun update(view: View) {
+        if (view is ImageView) {
+            view.contentDescription = description
+            view.tooltipText = description
+        }
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) update(view.getChildAt(index))
+        }
+    }
+    update(this)
+}
+
+/**
+ * Builds the context used to inflate the MaterialToolbar and its overflow
+ * popup so it renders with the scheme the Compose pages resolved. The base
+ * theme is chosen from the resolved appearance (Light/Dark baselines, or the
+ * Android 12+ dynamic color themes), then the black overlay is applied for the
+ * black evening theme. This mirrors Shizuku, whose whole activity theme (and
+ * therefore toolbar popup) re-resolves from its DayNight + dynamic color setup.
+ */
+private fun toolbarThemeContext(
+    baseContext: Context,
+    dark: Boolean,
+    systemColors: Boolean,
+    blackBackground: Boolean,
+    dynamicColorsSupported: Boolean,
+): Context {
+    var context: Context = ContextThemeWrapper(
+        baseContext,
+        when {
+            systemColors && dynamicColorsSupported && dark -> R.style.Theme_BetterAM_Toolbar_DynamicColors_Dark
+            systemColors && dynamicColorsSupported -> R.style.Theme_BetterAM_Toolbar_DynamicColors_Light
+            dark -> R.style.Theme_BetterAM_Toolbar_Dark
+            else -> R.style.Theme_BetterAM_Toolbar_Light
+        }
+    )
+    if (systemColors && dynamicColorsSupported && DynamicColors.isDynamicColorAvailable()) {
+        // On Android 12+ this wraps the context so the dynamic color resources
+        // the theme references resolve to the current wallpaper palette, the
+        // same colors Compose's dynamic schemes use.
+        context = DynamicColors.wrapContextIfAvailable(
+            context,
+            DynamicColorsOptions.Builder()
+                .setThemeOverlay(
+                    if (dark) R.style.Theme_BetterAM_Toolbar_DynamicColors_Dark
+                    else R.style.Theme_BetterAM_Toolbar_DynamicColors_Light
+                )
+                .build(),
+        )
+    }
+    if (dark && blackBackground) {
+        context.theme.applyStyle(R.style.Theme_BetterAM_Toolbar_BlackOverlay, true)
+    }
+    return context
 }
 
 @Composable
@@ -407,13 +559,13 @@ private fun ManagerCard(onClick: (() -> Unit)? = null, content: @Composable Colu
 }
 
 @Composable
-private fun ManagerRow(icon: ImageVector, title: String, summary: String? = null, checking: Boolean = false) {
+private fun ManagerRow(@DrawableRes icon: Int, title: String, summary: String? = null, checking: Boolean = false) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
             Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                if (checking) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                else Icon(icon, null, Modifier.size(24.dp))
+                if (checking) LoadingIndicator(Modifier.size(40.dp))
+                else Icon(painterResource(icon), null, Modifier.size(24.dp))
             }
         }
         Spacer(Modifier.width(16.dp))
@@ -445,13 +597,13 @@ private fun LogPage(logs: String, scrollState: LazyListState, onCopy: () -> Unit
     Column(Modifier.widthIn(max = 640.dp).fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(pluralStringResource(R.plurals.logs_count, entries.size, entries.size), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FilledTonalButton(onClick = onCopy, enabled = entries.isNotEmpty(), modifier = Modifier.weight(1f)) { Text(stringResource(R.string.copy_all)) }
-            OutlinedButton(onClick = { confirmClear = true }, enabled = entries.isNotEmpty(), modifier = Modifier.weight(1f)) { Text(stringResource(R.string.clear_logs)) }
+            FilledTonalButton(onClick = onCopy, shapes = ButtonDefaults.shapes(), enabled = entries.isNotEmpty(), modifier = Modifier.weight(1f)) { Text(stringResource(R.string.copy_all)) }
+            OutlinedButton(onClick = { confirmClear = true }, shapes = ButtonDefaults.shapes(), enabled = entries.isNotEmpty(), modifier = Modifier.weight(1f)) { Text(stringResource(R.string.clear_logs)) }
         }
         if (entries.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.List, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(painterResource(R.drawable.ic_symbol_list), null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
                     Text(stringResource(R.string.logs_empty), style = MaterialTheme.typography.titleLarge)
                     Text(stringResource(R.string.logs_empty_summary), style = MaterialTheme.typography.bodyMedium)
                 }
@@ -482,8 +634,8 @@ private fun LogPage(logs: String, scrollState: LazyListState, onCopy: () -> Unit
             onDismissRequest = { confirmClear = false },
             title = { Text(stringResource(R.string.clear_logs_title)) },
             text = { Text(stringResource(R.string.clear_logs_description)) },
-            confirmButton = { TextButton(onClick = { onClear(); confirmClear = false }) { Text(stringResource(R.string.clear)) } },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.cancel)) } }
+            confirmButton = { TextButton(shapes = ButtonDefaults.shapes(), onClick = { onClear(); confirmClear = false }) { Text(stringResource(R.string.clear)) } },
+            dismissButton = { TextButton(shapes = ButtonDefaults.shapes(), onClick = { confirmClear = false }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 }

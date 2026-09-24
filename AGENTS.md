@@ -123,11 +123,19 @@ body titles, and compact app bars. Settings use grouped preference rows.
   Destinations are the `@Serializable` `HomeRoute` / `SettingsRoute` / `LogsRoute`
   keys in `ModuleScreen.kt`, so the back stack survives rotation and process
   death; keep them serializable and keep the serialization Gradle plugin applied.
-  Navigation 3 owns the system back gesture, and the forward/pop transition
-  specs are disabled to keep the plain page swap. The predictive pop transition
-  slides the outgoing page out in the drag direction (edge-aware) while the page
-  underneath stays pinned. At the root destination back is not intercepted, so
-  it still closes the manager.
+  Navigation 3 owns the system back gesture, and navigation uses the
+  Navigation 3 defaults (the 700ms fade, and the predictive pop transition that
+  slides the outgoing page out in the drag direction while the page underneath
+  stays pinned, both matching Shizuku's platform-owned motion). At the root
+  destination back is not intercepted, so it still closes the manager via
+  system predictive back (`enableOnBackInvokedCallback`).
+- The native `MaterialToolbar` and its overflow popup are re-themed at runtime
+  in `ModuleScreen.kt` (`toolbarThemeContext`) so the scheme the Compose pages
+  resolved reaches the view toolkit: `Theme.BetterAM.Toolbar.DynamicColors.*`
+  on Android 12+ together with `DynamicColors.wrapContextIfAvailable`, plus the
+  `Theme.BetterAM.Toolbar.BlackOverlay` overlay for the black evening theme.
+  Keep the v31 variant of the theme matching its base, and keep the black
+  overlay's palette in sync with the Compose black scheme.
 - Show the connection loading state only for a new manager process; foreground
   returns and activity recreation reuse the last result while refreshing it.
 - Preserve animated status content/height changes without restarting loading

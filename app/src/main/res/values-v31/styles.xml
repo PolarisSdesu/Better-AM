@@ -1,0 +1,7 @@
+<resources>
+    <!-- Android 12+ replaces the non-dynamic fallback with the MDC dynamic
+         color themes, matching the wallpaper colors of the Compose dynamic
+         schemes. DynamicColors applies the wallpaper palette at runtime. -->
+    <style name="Theme.BetterAM.Toolbar.DynamicColors.Light" parent="Theme.Material3Expressive.DynamicColors.Light" />
+    <style name="Theme.BetterAM.Toolbar.DynamicColors.Dark" parent="Theme.Material3Expressive.DynamicColors.Dark" />
+</resources>

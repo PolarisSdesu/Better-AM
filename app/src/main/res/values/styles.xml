@@ -21,4 +21,34 @@
         <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
         <item name="android:windowLightNavigationBar">@bool/light_system_bars</item>
     </style>
+
+    <!-- AndroidView wrappers for the native MaterialToolbar. Recreating the
+         toolbar with one of these themes makes the popup menu (background, item
+         text and icons) follow the manager's resolved appearance immediately.
+         The base themes match the Compose schemes: light uses the M3
+         expressive baseline, dark the standard M3 dark baseline. On Android 12+
+         the DynamicColors variants are swapped in for Theme.BetterAM.Toolbar.
+         DynamicColors.* (see values-v31), so the native overflow, tooltips and
+         popup read the same wallpaper colors the Compose pages use. A black
+         overlay is applied at runtime for the black-evening theme. -->
+    <style name="Theme.BetterAM.Toolbar.Light" parent="Theme.Material3Expressive.Light.NoActionBar" />
+    <style name="Theme.BetterAM.Toolbar.Dark" parent="Theme.Material3.Dark.NoActionBar" />
+
+    <!-- Non-dynamic fallbacks; replaced by the v31 resources wherever dynamic
+         color is available, so this reference is always resolvable. -->
+    <style name="Theme.BetterAM.Toolbar.DynamicColors.Light" parent="Theme.BetterAM.Toolbar.Light" />
+    <style name="Theme.BetterAM.Toolbar.DynamicColors.Dark" parent="Theme.BetterAM.Toolbar.Dark" />
+
+    <!-- Mirrors the black theme surface overrides computed in ModuleScreen so
+         the native popup surfaces stay consistent with the Compose pages. -->
+    <style name="Theme.BetterAM.Toolbar.BlackOverlay" parent="">
+        <item name="android:colorBackground">@android:color/black</item>
+        <item name="colorSurface">@android:color/black</item>
+        <item name="colorSurfaceContainer">@android:color/black</item>
+        <item name="colorSurfaceContainerLow">#FF121212</item>
+        <item name="colorSurfaceContainerHigh">#FF1C1C1C</item>
+        <item name="colorSurfaceContainerHighest">#FF1C1C1C</item>
+        <item name="colorSurfaceContainerLowest">@android:color/black</item>
+        <item name="colorSurfaceDim">@android:color/black</item>
+    </style>
 </resources>

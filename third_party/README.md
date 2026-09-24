@@ -33,8 +33,10 @@ wrapper JAR's embedded notices. See [Gradle-LICENSE](Gradle-LICENSE).
 The manager home and settings layouts refer to Shizuku Manager:
 https://github.com/RikkaApps/Shizuku/tree/b844bc491f1790c72328e1a8e5b2349f8978f0ea/manager
 
-Better AM implements these screens in Compose. Shizuku's application code,
-branding, and translation resources are not bundled here.
+Better AM implements the screens in Compose while using the same Android
+`MaterialToolbar`/XML-menu pattern for the app bars. Shizuku's application
+code, branding, and translation resources are not bundled here. The original settings and back vector paths are standard Material Icons,
+distributed under Apache-2.0. The manager now uses Material Symbols Rounded.
 
 ## Dependencies
 
@@ -45,3 +47,13 @@ and Gradle's dependency report identify the artifacts used by a particular build
 ```sh
 ./gradlew :app:dependencies --configuration releaseRuntimeClasspath
 ```
+
+## Material Symbols
+
+- Source: https://github.com/google/material-design-icons/tree/master/symbols/web
+- Copyright: Google LLC
+- License: Apache-2.0; see [MaterialSymbols-LICENSE](MaterialSymbols-LICENSE).
+- Assets: `app/src/main/res/drawable/ic_symbol_*.xml`.
+
+Material Symbols Rounded 24px SVG paths are converted to Android vector
+resources without changing their geometry. The back arrow supports RTL mirroring.

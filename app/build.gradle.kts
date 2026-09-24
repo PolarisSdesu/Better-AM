@@ -48,6 +48,18 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    val abiSplits = providers.gradleProperty("abiSplits").orNull == "true"
+    if (abiSplits) {
+        splits {
+            abi {
+                isEnable = true
+                reset()
+                include("arm64-v8a", "armeabi-v7a")
+                isUniversalApk = true
+            }
+        }
+    }
 }
 
 dependencies {
@@ -56,7 +68,9 @@ dependencies {
     implementation("androidx.navigation3:navigation3-runtime:1.1.7")
     implementation("androidx.navigation3:navigation3-ui:1.1.7")
     implementation("androidx.compose.material3:material3:1.5.0-alpha28")
-    implementation("androidx.compose.material:material-icons-core:1.7.8")
+    // Keep the manager app bar behavior identical to Shizuku's MaterialToolbar,
+    // including native action-menu overflow and long-press tooltips.
+    implementation("com.google.android.material:material:1.14.0")
 
     implementation("org.jetbrains.compose.foundation:foundation:1.12.0")
     implementation("org.jetbrains.compose.ui:ui:1.12.0")
